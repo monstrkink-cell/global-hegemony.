@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Global Hegemony</title>
+<style>
+:root{--g:#00ff9c;--c:#38d5ff;--r:#ff4d4d;--y:#ffd23f;--bg:rgba(4,12,20,.88);--line:rgba(0,255,156,.35)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#cfeee0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+#globe{position:absolute;inset:0}
+#hud{position:absolute;top:0;left:0;right:0;background:var(--bg);border-bottom:1px solid var(--line);padding:6px 8px;z-index:5}
+#hud .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+#hud b{color:var(--g)}
+.res span{margin-right:8px;white-space:nowrap}
+#def{height:6px;background:#222;border-radius:3px;margin-top:5px;overflow:hidden}
+#defbar{height:100%;width:20%;background:var(--g);transition:all .4s}
+#log{position:absolute;top:84px;left:8px;right:8px;z-index:4;pointer-events:none;text-shadow:0 0 4px #000}
+#log div{margin-bottom:2px;opacity:.9}
+.bad{color:var(--r)}.good{color:var(--g)}.info{color:var(--c)}
+#bottom{position:absolute;left:0;right:0;bottom:0;z-index:6}
+#panel{background:var(--bg);border-top:1px solid var(--line);max-height:42vh;overflow:auto;padding:8px;display:none}
+#panel h3{margin:0 0 6px;color:var(--g);font-size:13px;letter-spacing:1px}
+#tabs{display:flex;background:#06121c;border-top:1px solid var(--line)}
+#tabs button{flex:1;padding:9px 2px;background:none;border:0;color:#7fb7a0;font:inherit;font-size:11px}
+#tabs button.on{color:#000;background:var(--g);font-weight:bold}
+#dock{display:flex;gap:6px;padding:6px;background:#030a11;border-top:1px solid var(--line)}
+#dock button{flex:1;padding:12px 2px;background:#0a2230;border:1px solid var(--c);color:var(--c);border-radius:6px;font:inherit;font-size:11px;user-select:none;touch-action:manipulation}
+#dock button:active{background:var(--c);color:#000}
+#dock button.on{background:var(--g);color:#000;border-color:var(--g)}
+.b{display:flex;justify-content:space-between;align-items:center;width:100%;margin:0 0 5px;padding:9px;background:#0a2230;border:1px solid var(--line);color:#cfeee0;border-radius:6px;font:inherit;text-align:left}
+.b small{color:#7fb7a0;margin-left:8px}
+.b:active{background:var(--g);color:#000}
+.card{border:1px solid var(--y);border-radius:6px;padding:7px;margin-bottom:8px;color:var(--y)}
+.tag{display:inline-block;border:1px solid var(--c);color:var(--c);border-radius:4px;padding:0 4px;margin-right:4px;font-size:10px}
+#start{position:absolute;left:8px;right:8px;bottom:8px;max-width:460px;margin:auto;background:var(--bg);border:1px solid var(--g);border-radius:10px;padding:12px;z-index:9}
+#start h1{margin:0 0 2px;color:var(--g);font-size:18px;letter-spacing:2px}
+#start select,#start button{width:100%;padding:10px;margin-top:8px;font:inherit;border-radius:6px}
+#start select{background:#0a2230;color:#fff;border:1px solid var(--line)}
+#start button{background:var(--g);color:#000;border:0;font-weight:bold;font-size:14px}
+#end{position:absolute;inset:0;background:rgba(0,0,0,.85);display:none;z-index:20;align-items:center;justify-content:center;text-align:center;padding:20px}
+#end button{padding:12px 20px;background:var(--g);border:0;border-radius:6px;font:inherit;font-weight:bold;margin-top:14px}
+</style>
+</head>
+<body>
+<div id="globe"></div>
+
+<div id="hud" style="display:none">
+  <div class="row"><b id="hName"></b><span id="hTr"></span><span id="hSt"></span><span id="hDay"></span></div>
+  <div class="row res" id="hRes"></div>
+  <div class="row"><span id="hDef"></span><span id="hShare"></span></div>
+  <div id="def"><div id="defbar"></div></div>
+</div>
+<div id="log"></div>
+
+<div id="start">
+  <h1>GLOBAL HEGEMONY</h1>
+  <div style="color:#7fb7a0">Pick your nation (or tap it on the globe)</div>
+  <select id="sel"></select>
+  <div id="prof" style="margin-top:8px;line-height:1.5"></div>
+  <button id="go">START GAME</button>
+</div>
+
+<div id="bottom" style="display:none">
+  <div id="panel"></div>
+  <div id="tabs">
+    <button data-t="mil">⚔ Military</button>
+    <button data-t="eco">🏭 Economy</button>
+    <button data-t="dip">🕵 Diplomacy</button>
+    <button data-t="rnd">🔬 R&amp;D</button>
+  </div>
+  <div id="dock">
+    <button id="cProd">⚙ Boost<br>Production</button>
+    <button id="cBond">💵 War<br>Bonds</button>
+    <button id="cRally">📣 Rally<br>Volunteers</button>
+    <button id="cAuto">🤖 AI Generals<br><span id="autoT">OFF</span></button>
+    <button id="cDN">🌓<br>Day/Night</button>
+  </div>
+</div>
+
+<div id="end"><div><h1 id="endT" style="color:var(--g)"></h1><div id="endM"></div><button onclick="location.reload()">PLAY AGAIN</button></div></div>
+
+<script src="https://unpkg.com/globe.gl"></script>
+<script>
+/* ---------- helpers & data ---------- */
+const $=id=>document.getElementById(id);
+const fmt=n=>{const a=Math.abs(n),s=n<0?'-':'';return s+(a>=1e6?(a/1e6).toFixed(2)+'T':a>=1e3?(a/1e3).toFixed(1)+'B':a.toFixed(0)+'M')};
+const NATO=new Set('USA CAN GBR FRA DEU ITA ESP PRT NLD BEL LUX NOR DNK ISL POL CZE SVK HUN ROU BGR GRC TUR HRV SVN EST LVA LTU ALB MKD FIN SWE MNE'.split(' '));
+const BRICS=new Set('BRA RUS IND CHN ZAF EGY ETH IRN ARE IDN'.split(' '));
+const P5=new Set('USA GBR FRA RUS CHN'.split(' '));
+const OIL=new Set('SAU RUS USA IRN IRQ ARE KWT CAN NGA VEN LBY DZA KAZ NOR BRA QAT AGO'.split(' '));
+const REE=new Set('CHN BRA IND AUS RUS VNM USA MMR GRL'.split(' '));
+const AGRI=new Set('USA BRA IND CHN ARG UKR FRA RUS CAN AUS'.split(' '));
+const DEBT={USA:120,JPN:255,ITA:140,FRA:112,GBR:100,CHN:85,IND:82,BRA:87,DEU:64,CAN:105,RUS:20,AUS:50,ESP:107,TUR:30,SAU:26,ARE:30};
+const P=f=>f.properties, key=f=>P(f).ADM0_A3||P(f).ISO_A3;
+const gdp=f=>Math.max(500,P(f).GDP_MD||P(f).GDP_MD_EST||500);
+const pop=f=>P(f).POP_EST||1e6;
+const power=f=>Math.round(Math.sqrt(gdp(f))*1.5+pop(f)/2e6);
+const debtOf=f=>DEBT[key(f)]||60;
+function cen(f){if(f._c)return f._c;const g=f.geometry,rs=g.type==='Polygon'?[g.coordinates[0]]:g.coordinates.map(p=>p[0]);const b=rs.reduce((a,c)=>c.length>a.length?c:a);let x=0,y=0;b.forEach(p=>{x+=p[0];y+=p[1]});return f._c={lat:y/b.length,lng:x/b.length}}
+function dist(a,b){const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lng-a.lng)*r;const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+const rand=(a,b)=>a+Math.random()*(b-a);
+
+let feats=[],byKey={},world,S=null,sel=null,tab=null,arcs=[],night=true,worldGDP=0,vetoCd=0;
+const IMG='https://unpkg.com/three-globe/example/img/';
+
+/* ---------- globe ---------- */
+function capColor(f){
+  const k=key(f);
+  if(sel&&key(sel)===k)return 'rgba(255,210,63,.85)';
+  if(S){
+    if(S.owned.has(k))return 'rgba(0,255,156,.65)';
+    if(S.allies.has(k))return 'rgba(56,140,255,.6)';
+    if(S.war.has(k))return 'rgba(255,60,60,.7)';
+  }
+  return 'rgba(255,255,255,.10)';
+}
+const alt=f=>(S&&S.owned.has(key(f)))?.025:(sel&&key(sel)===key(f))?.04:.006;
+function refresh(){world.polygonCapColor(capColor).polygonAltitude(alt)}
+function setArcs(){
+  if(!S)return;
+  const m=cen(S.me),a=[];
+  S.allies.forEach(k=>a.push({startLat:m.lat,startLng:m.lng,endLat:cen(byKey[k]).lat,endLng:cen(byKey[k]).lng,c:['#38d5ff','#00ff9c']}));
+  world.arcsData(a.concat(arcs));
+}
+function attackArc(f){
+  const m=cen(S.me),t=cen(f),o={startLat:m.lat,startLng:m.lng,endLat:t.lat,endLng:t.lng,c:['#ff4d4d','#ffd23f']};
+  arcs.push(o);setArcs();setTimeout(()=>{arcs=arcs.filter(x=>x!==o);setArcs()},3500);
+}
+async function load(){
+  const urls=['https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson','https://unpkg.com/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson'];
+  let d=null;
+  for(const u of urls){try{d=await (await fetch(u)).json();break}catch(e){}}
+  if(!d){$('prof').textContent='Could not load map data. Check your internet and refresh.';return}
+  feats=d.features.filter(f=>P(f).NAME!=='Antarctica');
+  feats.forEach(f=>{byKey[key(f)]=f;worldGDP+=gdp(f)});
+  world=Globe()($('globe'))
+    .globeImageUrl(IMG+'earth-night.jpg').bumpImageUrl(IMG+'earth-topology.png').backgroundImageUrl(IMG+'night-sky.png')
+    .atmosphereColor('#38d5ff').width(innerWidth).height(innerHeight)
+    .polygonsData(feats).polygonCapColor(capColor).polygonSideColor(()=>'rgba(0,255,156,.15)').polygonStrokeColor(()=>'#0b3d2e')
+    .polygonAltitude(alt).polygonsTransitionDuration(250)
+    .polygonLabel(f=>`<b>${P(f).NAME}</b><br>GDP $${fmt(gdp(f))}`)
+    .onPolygonClick(onClick)
+    .arcColor('c').arcDashLength(.4).arcDashGap(.2).arcDashAnimateTime(1500).arcStroke(.5).arcAltitudeAutoScale(.4);
+  world.controls().autoRotate=true;world.controls().autoRotateSpeed=.5;
+  addEventListener('resize',()=>world.width(innerWidth).height(innerHeight));
+  const s=$('sel');
+  feats.slice().sort((a,b)=>P(a).NAME.localeCompare(P(b).NAME)).forEach(f=>{const o=document.createElement('option');o.value=key(f);o.textContent=P(f).NAME;s.appendChild(o)});
+  s.value='USA'in byKey?'USA':s.options[0].value;showProfile();
+}
+function onClick(f){
+  if(!S){$('sel').value=key(f);showProfile();world.pointOfView({lat:cen(f).lat,lng:cen(f).lng,altitude:1.8},800);return}
+  sel=f;refresh();if(!tab)openTab('mil');else render();
+}
+
+/* ---------- country profile / start ---------- */
+function tags(f){const k=key(f);let t='';if(NATO.has(k))t+='<span class="tag">NATO</span>';if(BRICS.has(k))t+='<span class="tag">BRICS</span>';if(P5.has(k))t+='<span class="tag">UN VETO</span>';return t+'<span class="tag">UN</span>'}
+function showProfile(){
+  const f=byKey[$('sel').value],cp=power(f),k=key(f);
+  $('prof').innerHTML=`Population: <b>${(pop(f)/1e6).toFixed(1)}M</b> · GDP: <b>$${fmt(gdp(f))}</b><br>Debt: ~<b>${debtOf(f)}%</b> of GDP${DEBT[k]?'':' (est.)'}<br>Forces: Army ${Math.round(cp*.5)} · Navy ${Math.round(cp*.15)} · Air ${Math.round(cp*.25)} · Cyber ${Math.round(cp*.1)}<br>Resources: ${OIL.has(k)?'🛢Oil ':''}${REE.has(k)?'💎Rare Earth ':''}${AGRI.has(k)?'🌾Agriculture ':''}${!OIL.has(k)&&!REE.has(k)&&!AGRI.has(k)?'limited':''}<br>${tags(f)}`;
+}
+$('sel').onchange=()=>{showProfile();const f=byKey[$('sel').value];world.pointOfView({lat:cen(f).lat,lng:cen(f).lng,altitude:1.8},800)};
+$('go').onclick=()=>{
+  const f=byKey[$('sel').value],k=key(f),R0=gdp(f)/1217;
+  S={me:f,k,owned:new Set([k]),allies:new Set(),war:new Map(),pw:{},seen:new Set(),tech:new Set(),
+     cp:power(f),cp0:power(f),R0,tr:R0*30,stab:70,appr:70,day:0,tension:10,fac:0,grid:0,trade:0,auto:false,combo:0,over:false,
+     interest:gdp(f)*debtOf(f)/100*.03/365,rev:0,exp:0,
+     res:{energy:50+(OIL.has(k)?50:0),steel:50,food:50+(AGRI.has(k)?50:0),chips:20+(REE.has(k)?30:0),muni:30},
+     bonus:{oil:OIL.has(k),ree:REE.has(k),agri:AGRI.has(k)}};
+  $('start').style.display='none';$('hud').style.display='block';$('bottom').style.display='block';
+  world.controls().autoRotate=false;world.pointOfView({lat:cen(f).lat,lng:cen(f).lng,altitude:1.7},1500);
+  refresh();hud();log('You lead '+P(f).NAME+'. Tap other countries to target them.','info');
+  setInterval(tick,1000);setInterval(()=>{if(S)S.combo=Math.max(0,S.combo-1)},350);
+};
+
+/* ---------- log ---------- */
+const logs=[];
+function log(m,c){logs.push([m,c||'']);if(logs.length>4)logs.shift();$('log').innerHTML=logs.map(l=>`<div class="${l[1]}">› ${l[0]}</div>`).join('')}
+function fail(m){log(m,'bad');return false}
+
+/* ---------- game loop ---------- */
+function tick(){
+  if(!S||S.over)return;
+  S.day++;vetoCd=Math.max(0,vetoCd-1);
+  let tg=0;S.owned.forEach(k=>tg+=gdp(byKey[k]));
+  const base=tg/1217;
+  const mult=1+.05*S.fac+.03*S.trade+.03*Math.min(5,S.allies.size)+(S.tech.has('sat')?.1:0);
+  const rev=base*mult*(S.stab<30?.5:1);
+  const exp=.4*base*(S.cp/S.cp0)+S.interest+(S.auto?S.R0*.02:0);
+  S.rev=rev;S.exp=exp;S.tr+=rev-exp;
+  const r=S.res,b=S.bonus;
+  r.energy+=1+S.grid*2+(b.oil?1:0);r.steel+=1+S.fac+(S.auto?.5:0);r.food+=1+(b.agri?1:0);
+  r.chips+=.3+S.fac*.3+(b.ree?.5:0);r.muni+=.5+S.fac*.5+(S.auto?1.5:0);
+  r.muni-=S.war.size*1.5;
+  if(r.muni<0){r.muni=0;if(S.war.size)S.stab-=.3}
+  for(const k in r)r[k]=Math.min(999,r[k]);
+  S.war.forEach((e,k)=>{if(S.day>e){S.war.delete(k);log('Ceasefire with '+P(byKey[k]).NAME,'info');refresh()}});
+  for(const k in S.pw){const bs=power(byKey[k]);S.pw[k]=Math.min(bs,S.pw[k]+bs*.005)}
+  S.tension=Math.max(0,S.tension-(S.war.size?.1:.3));
+  if(S.stab<70)S.stab+=.05;
+  S.stab-=.15*S.war.size+(S.tension>60?.05:0);
+  if(S.tr<0){S.stab-=.3;S.cp*=.998}
+  S.stab=Math.max(0,Math.min(100,S.stab));S.appr+=(S.stab-S.appr)*.05;
+  if(S.stab<20&&Math.random()<.03){S.cp*=.9;log('Revolt! Unrest weakens your army.','bad')}
+  if(Math.random()<1/35)randomEvent();
+  const share=[...S.owned].reduce((a,k)=>a+gdp(byKey[k]),0)/worldGDP;
+  if(share>=.5)return finish(true,'You control over 50% of world GDP. You are the global hegemon!');
+  if(S.stab<=0)return finish(false,'Your government collapsed.');
+  hud();
+}
+function finish(win,m){S.over=true;$('endT').textContent=win?'VICTORY':'GAME OVER';$('endT').style.color=win?'var(--g)':'var(--r)';$('endM').textContent=m+' (Day '+S.day+')';$('end').style.display='flex'}
+function randomEvent(){
+  const e=Math.floor(rand(0,4));
+  if(e===0){if(S.tension>30){if(P5.has(S.k)){log('UN condemns you — you used your VETO.','good')}else{S.stab-=4;log('UN resolution condemns your actions. Stability -4','bad')}}else log('UN debate: global tension is calm.','info')}
+  else if(e===1){if(S.res.food<50){S.stab-=5;log('Food shortages cause protests! Stability -5','bad')}else{S.res.food-=30;log('Food prices spike; reserves used.','info')}}
+  else if(e===2){S.res.energy=Math.max(0,S.res.energy-30);log('Foreign cyber-attack hits your power grid. Energy -30','bad')}
+  else{const g=S.R0*rand(2,6);S.tr+=g;log('Oil price shock boosts exports: +$'+fmt(g),'good')}
+}
+
+/* ---------- HUD ---------- */
+function hud(){
+  const net=S.rev-S.exp,lvl=Math.max(1,5-Math.floor(S.tension/20));
+  const cols=['#ff4d4d','#ff8c42','#ffd23f','#38d5ff','#00ff9c'];
+  $('hName').textContent=P(S.me).NAME+' · '+S.owned.size+' states';
+  $('hTr').innerHTML=`💰 $${fmt(S.tr)} <span class="${net>=0?'good':'bad'}">(${net>=0?'+':''}${fmt(net)}/d)</span>`;
+  $('hSt').innerHTML=`🛡 Stab <b>${S.stab.toFixed(0)}%</b> · 👍 ${S.appr.toFixed(0)}%`;
+  $('hDay').textContent='Day '+S.day;
+  const r=S.res;
+  $('hRes').innerHTML=`<span>⚡${r.energy|0}</span><span>🔩${r.steel|0}</span><span>🌾${r.food|0}</span><span>💾${r.chips|0}</span><span>💣${r.muni|0}</span><span>🪖CP ${S.cp|0}</span>`;
+  $('hDef').innerHTML=`DEFCON <b style="color:${cols[lvl-1]}">${lvl}</b>`;
+  const sh=[...S.owned].reduce((a,k)=>a+gdp(byKey[k]),0)/worldGDP*100;
+  $('hShare').textContent=`World GDP share: ${sh.toFixed(1)}% / 50% to win`;
+  $('defbar').style.width=(100-S.tension)+'%';$('defbar').style.background=cols[lvl-1];
+}
+
+/* ---------- action helpers ---------- */
+const C=k=>Math.round(k*S.R0);
+function spend(tr,res){
+  res=res||{};
+  if(S.tr<tr)return fail('Not enough funds.');
+  for(const k in res)if(S.res[k]<res[k])return fail('Not enough '+k+'.');
+  S.tr-=tr;for(const k in res)S.res[k]-=res[k];return true;
+}
+function needTarget(ally){
+  if(!sel)return fail('Tap a target country on the globe first.');
+  const k=key(sel);
+  if(S.owned.has(k))return fail('That is your own territory.');
+  if(S.allies.has(k)&&!ally)return fail('They are your ally.');
+  return true;
+}
+function inRange(f){
+  const r=3500+(S.tech.has('hyper')?3500:0),c=cen(f);let m=1e9;
+  S.owned.forEach(o=>{m=Math.min(m,dist(cen(byKey[o]),c))});return m<=r;
+}
+const pwr=f=>S.pw[key(f)]??(S.pw[key(f)]=power(f));
+function declareWar(f){S.war.set(key(f),S.day+60)}
+
+/* ---------- actions ---------- */
+function act(a,arg){
+  if(!S||S.over)return;
+  const f=sel,k=f&&key(f);
+  switch(a){
+    case 'recruit':
+      if(!spend(C(4),{food:20}))break;
+      S.cp+=S.cp0*.1;S.stab-=.5;log('New divisions recruited.','good');break;
+    case 'strike':
+      if(!needTarget())break;if(!inRange(f)){fail('Target out of range.');break}
+      if(!spend(C(1),{muni:15}))break;
+      S.pw[k]=Math.max(power(f)*.3,pwr(f)*.8);S.tension+=8;declareWar(f);attackArc(f);
+      log('Satellite strike on '+P(f).NAME+'! Their defenses weakened.','good');break;
+    case 'blockade':
+      if(!needTarget())break;if(!inRange(f)){fail('Target out of range.');break}
+      if(!spend(C(1.5),{muni:10}))break;
+      S.pw[k]=Math.max(power(f)*.3,pwr(f)*.9);S.tension+=10;declareWar(f);
+      log('Maritime blockade of '+P(f).NAME+'.','good');break;
+    case 'invade':{
+      if(!needTarget())break;if(!inRange(f)){fail('Target out of range.');break}
+      if(!spend(0,{muni:30}))break;
+      const att=S.cp*(1+.15*S.tech.has('hyper')+.2*S.tech.has('drone'))*rand(.8,1.2)*(S.stab/100*.4+.8);
+      const dp=pwr(f),def=dp*1.25*rand(.8,1.2);
+      S.tension+=15;S.stab-=2;declareWar(f);attackArc(f);
+      if(att>def){
+        S.cp=Math.max(1,S.cp-Math.min(dp*.3,S.cp*.4))+dp*.25;
+        S.owned.add(k);S.war.delete(k);delete S.pw[k];S.stab-=3;
+        log('VICTORY! '+P(f).NAME+' has been annexed.','good');setArcs();
+      }else{
+        S.cp=Math.max(1,S.cp*.8);S.stab-=4;
+        log('Invasion of '+P(f).NAME+' failed. Heavy losses.','bad');
+      }
+      break}
+    case 'factory':
+      if(!spend(C(8),{steel:40,energy:20}))break;S.fac++;log('Factory built.','good');break;
+    case 'grid':
+      if(!spend(C(6),{steel:30}))break;S.grid++;log('Energy grid upgraded.','good');break;
+    case 'trade':
+      if(S.trade>=5){fail('Trade deals maxed.');break}
+      if(!spend(C(2)))break;S.trade++;log('Trade agreement signed. Income up.','good');break;
+    case 'ally':
+      if(!needTarget())break;if(S.war.has(k)){fail('You are at war with them.');break}
+      if(!spend(C(1)))break;
+      if(Math.random()<(S.tension<70?.5:.15)){S.allies.add(k);log(P(f).NAME+' joined your alliance!','good');setArcs()}
+      else log(P(f).NAME+' rejected your proposal.','bad');break;
+    case 'sanction':
+      if(!needTarget())break;if(!spend(C(1)))break;
+      S.pw[k]=Math.max(power(f)*.3,pwr(f)*.9);S.tension+=5;
+      log('Sanctions imposed on '+P(f).NAME+'.','info');break;
+    case 'coup':
+      if(!needTarget())break;if(!inRange(f)){fail('Target out of range.');break}
+      if(!spend(C(6)))break;S.tension+=10;
+      if(Math.random()<.3){S.owned.add(k);delete S.pw[k];S.war.delete(k);log('Coup succeeded! '+P(f).NAME+' is now a puppet state.','good');setArcs()}
+      else{S.stab-=3;log('Coup in '+P(f).NAME+' failed and was exposed.','bad')}break;
+    case 'spy':
+      if(!needTarget(true))break;if(!spend(C(.5),{chips:5}))break;
+      S.seen.add(k);log('Intel on '+P(f).NAME+': power '+Math.round(pwr(f))+'.','info');break;
+    case 'cyber':
+      if(!S.tech.has('cyber')){fail('Research 5G Cyber Warfare first.');break}
+      if(!needTarget())break;if(!spend(C(1),{chips:10}))break;
+      S.pw[k]=Math.max(power(f)*.3,pwr(f)*.85);S.tension+=6;
+      log('Cyber-attack cripples '+P(f).NAME+"'s command network.",'good');break;
+    case 'veto':
+      if(!P5.has(S.k)){fail('Only the 5 permanent members have a veto.');break}
+      if(vetoCd>0){fail('Veto ready in '+vetoCd+'s.');break}
+      vetoCd=60;S.tension=Math.max(0,S.tension-15);log('You vetoed the resolution. Tension -15.','good');break;
+    case 'tech':{
+      const T=TECH[arg];if(S.tech.has(arg)){fail('Already researched.');break}
+      if(!spend(C(T.c),{chips:T.ch}))break;S.tech.add(arg);log('Researched: '+T.n,'good');break}
+  }
+  refresh();hud();render();
+}
+const TECH={
+  cyber:{n:'5G Cyber Warfare',c:10,ch:15,d:'Unlocks cyber-attacks'},
+  hyper:{n:'Hypersonic Missiles',c:15,ch:20,d:'+15% attack, double range'},
+  drone:{n:'AI Drone Swarms',c:12,ch:20,d:'+20% attack'},
+  sat:{n:'Satellite Network',c:8,ch:10,d:'+10% income'}
+};
+
+/* ---------- panels ---------- */
+function btn(a,label,cost,arg){return `<button class="b" onclick="act('${a}'${arg?`,'${arg}'`:''})"><span>${label}</span><small>${cost}</small></button>`}
+const cs=(c,r)=>`$${fmt(C(c))}${r?' · '+r:''}`;
+function targetCard(){
+  if(!sel)return '<div class="card">No target. Tap a country on the globe.</div>';
+  const k=key(sel),st=S.owned.has(k)?'Your territory':S.allies.has(k)?'Ally':S.war.has(k)?'AT WAR':'Neutral';
+  const p=S.owned.has(k)?'-':(S.seen.has(k)?Math.round(pwr(sel)):'? (use Spy)');
+  return `<div class="card"><b>${P(sel).NAME}</b> · ${st}<br>Pop ${(pop(sel)/1e6).toFixed(1)}M · GDP $${fmt(gdp(sel))} · Power ${p}<br>${tags(sel)}${S.owned.has(k)?'':(inRange(sel)?'<span class="tag" style="color:#00ff9c">IN RANGE</span>':'<span class="tag" style="color:#ff4d4d">OUT OF RANGE</span>')}</div>`;
+}
+function render(){
+  const p=$('panel');
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  if(!tab){p.style.display='none';return}
+  p.style.display='block';let h='';
+  if(tab==='mil')h=`<h3>MILITARY COMMAND</h3><div style="margin-bottom:6px">Combat power <b>${S.cp|0}</b> · Active wars <b>${S.war.size}</b></div>${targetCard()}`
+    +btn('recruit','Recruit troops',cs(4,'20 food'))+btn('strike','Satellite / air strike',cs(1,'15 munitions'))
+    +btn('blockade','Blockade sea routes',cs(1.5,'10 munitions'))+btn('invade','Launch ground invasion','30 munitions');
+  else if(tab==='eco')h=`<h3>ECONOMY &amp; INDUSTRY</h3><div style="margin-bottom:6px">Revenue $${fmt(S.rev)}/d · Expenses $${fmt(S.exp)}/d<br>Factories ${S.fac} · Grids ${S.grid} · Trade deals ${S.trade}/5</div>`
+    +btn('factory','Build factory',cs(8,'40 steel, 20 energy'))+btn('grid','Upgrade energy grid',cs(6,'30 steel'))+btn('trade','Sign trade agreement',cs(2));
+  else if(tab==='dip')h=`<h3>DIPLOMACY &amp; INTELLIGENCE</h3>${targetCard()}`
+    +btn('ally','Propose alliance',cs(1))+btn('sanction','Impose sanctions',cs(1))+btn('spy','Espionage (reveal power)',cs(.5,'5 chips'))
+    +btn('cyber','Cyber-attack',cs(1,'10 chips'))+btn('coup','Stage a coup',cs(6,'30% success'))
+    +(P5.has(S.k)?btn('veto','UN Security Council veto','-15 tension'):'');
+  else h='<h3>RESEARCH &amp; DEVELOPMENT</h3>'+Object.keys(TECH).map(i=>{const T=TECH[i];return S.tech.has(i)?`<div class="b good"><span>✔ ${T.n}</span><small>${T.d}</small></div>`:btn('tech',T.n,cs(T.c,T.ch+' chips')+'<br>'+T.d,i)}).join('');
+  p.innerHTML=h;
+}
+function openTab(t){tab=(tab===t)?null:t;render()}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>openTab(b.dataset.t));
+
+/* ---------- click hub (Age of Clicks) ---------- */
+const power_=()=>1+Math.min(S.combo,10)*.2;
+function click_(fn){if(!S||S.over)return;S.combo+=1;fn(power_());hud()}
+$('cProd').onclick=()=>click_(p=>{S.res.steel+=3*p;S.res.muni+=2*p;S.res.energy+=2*p});
+$('cBond').onclick=()=>click_(p=>{S.tr+=S.R0*.1*p;S.stab=Math.max(0,S.stab-.05)});
+$('cRally').onclick=()=>click_(p=>{S.cp+=S.cp0*.002*p;S.stab=Math.min(100,S.stab+.05)});
+$('cAuto').onclick=()=>{if(!S)return;S.auto=!S.auto;$('autoT').textContent=S.auto?'ON':'OFF';$('cAuto').classList.toggle('on',S.auto);log(S.auto?'AI generals now manage supply lines.':'AI generals stood down.','info')};
+$('cDN').onclick=()=>{night=!night;world.globeImageUrl(IMG+(night?'earth-night.jpg':'earth-blue-marble.jpg'))};
+
+load();
+</script>
+</body>
+</html>
